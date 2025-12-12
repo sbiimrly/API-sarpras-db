@@ -3,10 +3,9 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\AuthController;
-
-// Route::get('/user', function (Request $request) {
-//     return $request->user();
-// })->middleware('auth:sanctum');
+use App\Http\Controllers\User\UserController;
+use App\Http\Controllers\Admin\LaporanController;
+use App\Http\Controllers\Admin\DashboardController;
 
 // Allow preflight OPTIONS requests
 Route::options('/{any}', function () {
@@ -14,17 +13,23 @@ Route::options('/{any}', function () {
 })->where('any', '.*');
 
 Route::get('/test-api-check', function () {
-    return 'API Loaded';
+    return response()->json(['message' => 'API Loaded']);
 });
 
-// Authentication Routes
+// Public routes
 Route::post('/login', [AuthController::class, 'login'])
     ->middleware('throttle:admin-login');
 
-Route::post('/logout', [AuthController::class, 'logout'])
-->middleware('auth:sanctum');
+Route::post('/laporan', [UserController::class, 'store']);
 
-Route::get('/user', [AuthController::class, 'user'])
-->middleware('auth:sanctum');
+Route::get('/laporan', [LaporanController::class, 'index']);
 
+// PERBAIKAN: Hapus middleware auth:sanctum untuk sementara testing
+Route::get('/dashboard', [DashboardController::class, 'getDashboardData']);
+Route::get('/dashboard/filter', [DashboardController::class, 'filter']);
 
+// Protected routes
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/user', [AuthController::class, 'user']);
+});

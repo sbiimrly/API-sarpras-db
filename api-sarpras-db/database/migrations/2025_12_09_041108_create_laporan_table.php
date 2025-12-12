@@ -16,8 +16,8 @@ return new class extends Migration
             $table->string('nama_pengusul', 100);
             $table->string('email');
             $table->string('nomor_telepon', 15);
-            $table->string('lokasi_kerusakan', 10);
-            $table->string('deskripsi_kerusakan', 100);
+            $table->string('lokasi_kerusakan');
+            $table->string('deskripsi_kerusakan');
             $table->string('foto_kerusakan');
             $table->enum('status_laporan', ['menunggu', 'diproses', 'ditolak','terselesaikan'])->default('menunggu');
             $table->timestamps();

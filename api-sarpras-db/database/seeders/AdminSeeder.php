@@ -11,11 +11,11 @@ class AdminSeeder extends Seeder
     public function run(): void
     {
         Admin::create([
-            'kode' => 'ADM01',
+            'kode' => '101',
             'name' => 'Super Admin',
             'email' => 'admin@example.com',
             'password' => Hash::make('password123'),
-            'role' => 'super_admin',
+            'role' => 'admin',
             'nomor_telepon' => '08123456789',
         ]);
     }
