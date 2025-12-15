@@ -1,11 +1,15 @@
 <?php
 
 return [
-    'paths' => ['api/*', 'sanctum/csrf-cookie', 'login', 'logout'],
+
+    'paths' => ['api/*'],
 
     'allowed_methods' => ['*'],
 
-    'allowed_origins' => ['http://127.0.0.1:8000', 'http://localhost:8000'],
+    'allowed_origins' => [
+        'http://127.0.0.1:8000',
+        'http://localhost:8000',
+    ],
 
     'allowed_origins_patterns' => [],
 
@@ -15,5 +19,6 @@ return [
 
     'max_age' => 0,
 
-    'supports_credentials' => true,
+    'supports_credentials' => false,
 ];
+
