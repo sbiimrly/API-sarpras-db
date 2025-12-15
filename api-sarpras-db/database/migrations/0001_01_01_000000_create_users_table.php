@@ -18,7 +18,7 @@
                 $table->string('name', 100);
                 $table->string('email');
                 $table->timestamp('email_verified_at')->nullable();
-                $table->enum('role', ['admin', 'super_admin', 'sarpras'])->nullable()->default('admin');
+                $table->enum('role', ['admin', 'viewer'])->nullable()->default('viewer');
                 $table->string('password');
                 $table->string('nomor_telepon', 15);
                 $table->rememberToken();
