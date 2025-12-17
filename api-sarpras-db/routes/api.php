@@ -6,6 +6,7 @@ use App\Http\Controllers\User\UserController;
 use App\Http\Controllers\Admin\LaporanController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ArsipController;
+use App\Http\Controllers\Admin\AdminController;
 
 // Test route
 Route::get('/test', function () {
@@ -39,6 +40,16 @@ Route::prefix('admin')->group(function () {
     Route::get('/arsip', [ArsipController::class, 'index']);
     Route::post('/arsip/restore', [ArsipController::class, 'restore']);
     Route::post('/arsip/destroy', [ArsipController::class, 'destroy']);
+
+    // Admin routes
+    Route::get('/admins', [AdminController::class, 'index']);
+    Route::post('/admins', [AdminController::class, 'store']);
+    Route::get('/admins/{id}', [AdminController::class, 'show']);
+    Route::put('/admins/{id}', [AdminController::class, 'update']);
+    Route::delete('/admins/{id}', [AdminController::class, 'destroy']);
+    Route::post('/admins/delete-multiple', [AdminController::class, 'destroyMultiple']);
+    Route::put('/admins/{id}/status', [AdminController::class, 'updateStatus']);
+    Route::put('/admins/{id}/last-active', [AdminController::class, 'updateLastActive']);
 });
 
 // Protected routes
