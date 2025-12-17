@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Laporan extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'laporan';
 
     protected $fillable = [
@@ -17,4 +20,18 @@ class Laporan extends Model
         'foto_kerusakan',
         'status_laporan'
     ];
+
+    protected $dates = ['deleted_at'];
+
+    // Data aktif (laporan)
+    public function scopeActive($query)
+    {
+        return $query->whereNull('deleted_at');
+    }
+
+    // Data arsip
+    public function scopeArchived($query)
+    {
+        return $query->onlyTrashed();
+    }
 }
