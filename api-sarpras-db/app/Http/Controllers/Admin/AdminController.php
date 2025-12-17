@@ -6,6 +6,7 @@ use App\Models\Admin;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Routing\Controller;
+use Carbon\Carbon;
 
 class AdminController extends Controller
 {
@@ -23,8 +24,8 @@ class AdminController extends Controller
             }
 
             // Filter berdasarkan tanggal
-            if ($request->has('tanggal')) {
-                $now = now();
+            if ($request->has('tanggal') && $request->tanggal !== 'semua') {
+                $now = Carbon::now();
                 switch ($request->tanggal) {
                     case '7hari':
                         $query->where('created_at', '>=', $now->subDays(7));

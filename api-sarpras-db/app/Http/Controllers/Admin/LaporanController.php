@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Models\Laporan;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Carbon\Carbon;
 
 class LaporanController extends Controller
 {
@@ -23,18 +24,18 @@ class LaporanController extends Controller
             }
 
             // Filter berdasarkan tanggal
-            if ($request->has('tanggal')) {
-                $now = now();
+            if ($request->has('tanggal') && $request->tanggal !== 'semua') {
+                $today = Carbon::now();
                 switch ($request->tanggal) {
                     case '7hari':
-                        $query->where('created_at', '>=', $now->subDays(7));
+                        $query->where('created_at', '>=', $today->subDays(7));
                         break;
                     case '30hari':
-                        $query->where('created_at', '>=', $now->subDays(30));
+                        $query->where('created_at', '>=', $today->subDays(30));
                         break;
                     case 'bulan':
-                        $query->whereMonth('created_at', $now->month)
-                              ->whereYear('created_at', $now->year);
+                        $query->whereMonth('created_at', $today->month)
+                              ->whereYear('created_at', $today->year);
                         break;
                 }
             }
