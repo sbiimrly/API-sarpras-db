@@ -34,7 +34,10 @@ Route::prefix('admin')->group(function () {
     Route::post('/laporan/archive', [LaporanController::class, 'archive']);
     Route::post('/laporan/destroy', [LaporanController::class, 'destroy']);
     Route::get('/laporan/{id}', [LaporanController::class, 'show']);
-    Route::put('/laporan/{id}/status', [LaporanController::class, 'updateStatus']);
+
+    // PERBAIKAN: Tambahkan route POST untuk handle upload file
+    Route::post('/laporan/{id}/status', [LaporanController::class, 'updateStatus']); // POST untuk file upload
+    Route::put('/laporan/{id}/status', [LaporanController::class, 'updateStatus']); // PUT untuk non-file
 
     // Arsip routes
     Route::get('/arsip', [ArsipController::class, 'index']);
