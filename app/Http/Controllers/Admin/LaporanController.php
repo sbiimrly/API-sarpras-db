@@ -6,7 +6,7 @@ use App\Models\Laporan;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\Auth;
+use App\Services\ActivityLogger;
 
 class LaporanController extends Controller
 {
@@ -93,7 +93,7 @@ class LaporanController extends Controller
             }
 
             // PERBAIKAN: Ambil kode admin dari session
-            $adminKode = session('user.kode_admin') ?? 'ADM001';
+            $adminKode = session('user.kode_admin') ?? auth()->id();
             // Atau jika pakai auth:
             // $adminKode = auth()->user()->kode_admin ?? 'ADM001';
 
@@ -170,6 +170,20 @@ class LaporanController extends Controller
             }
 
             $laporan->save();
+
+            // Log aktivitas
+            ActivityLogger::log(
+                $adminKode,
+                "Status laporan #{$laporan->id} diubah menjadi {$laporan->status_laporan}",
+                'laporan_status',
+                [
+                    'laporan_id' => $laporan->id,
+                    'new_status' => $laporan->status_laporan,
+                    'admin_kode' => $adminKode,
+                    'waktu' => now()->toDateTimeString()
+                ],
+                $laporan->id
+            );
 
             return response()->json([
                 'success' => true,
