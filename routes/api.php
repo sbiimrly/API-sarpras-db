@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\LaporanController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ArsipController;
 use App\Http\Controllers\Admin\AdminController;
+use App\Http\Controllers\Admin\NotificationController;
 
 // Test route
 Route::get('/test', function () {
@@ -53,6 +54,11 @@ Route::prefix('admin')->group(function () {
     Route::put('/admins/{id}/status', [AdminController::class, 'updateStatus']);
     Route::put('/admins/{id}/last-active', [AdminController::class, 'updateLastActive']);
     Route::post('/admins', [AdminController::class, 'store'])->name('admin.api.store');
+
+    // Notifikasi routes
+    Route::get('/notifications', [NotificationController::class, 'getNotifications']);
+    Route::post('/notifications/mark-read', [NotificationController::class, 'markAsRead']);
+    Route::post('/notifications/{id}/mark-read', [NotificationController::class, 'markSingleAsRead']);
 });
 
 // Protected routes
