@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Admin;
+use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Routing\Controller;
@@ -16,7 +17,9 @@ class AdminController extends Controller
     public function index(Request $request)
     {
         try {
-            $query = Admin::query();
+            $query = Admin::with(['logs' => function($q) {
+                $q->latest()->limit(1);
+            }]);
 
             // Filter berdasarkan status
             if ($request->has('status') && $request->status !== 'all') {
@@ -103,6 +106,14 @@ class AdminController extends Controller
                 'nomor_telepon' => $request->nomor_telepon,
                 'role' => $request->role,
                 'status' => $request->status
+            ]);
+
+            ActivityLog::create([
+                'admin_id' => auth()->id() ?? $admin->id, // Jika belum login, gunakan ID admin baru
+                'activity' => "Menambahkan Admin Baru: {$admin->name}",
+                'type'     => 'create',
+                'details'  => ['role' => $admin->role],
+                'is_read'  => true
             ]);
 
             return response()->json([
@@ -352,6 +363,17 @@ class AdminController extends Controller
             $admin->update([
                 'last_active_at' => now()
             ]);
+
+            ActivityLog::create([
+            'admin_id' => $admin->id,
+            'activity' => $request->activity ?? 'Aktif di Dashboard', // Mengambil deskripsi aksi jika ada
+            'type'     => 'online',
+            'details'  => [
+                'ip' => $request->ip(),
+                'user_agent' => $request->header('User-Agent')
+            ],
+            'is_read'  => true
+        ]);
 
             return response()->json([
                 'success' => true,

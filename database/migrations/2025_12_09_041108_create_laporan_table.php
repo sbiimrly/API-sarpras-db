@@ -12,13 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('laporan', function (Blueprint $table) {
-            $table->id()->primary();
+            $table->id();
             $table->string('nama_pengusul', 100);
             $table->string('email');
             $table->string('nomor_telepon', 15);
             $table->string('lokasi_kerusakan');
             $table->string('deskripsi_kerusakan');
             $table->string('foto_kerusakan');
+            $table->string('foto_selesai')->nullable();
             $table->enum('status_laporan', ['menunggu', 'diproses', 'ditolak','terselesaikan'])->default('menunggu');
             $table->timestamps();
         });

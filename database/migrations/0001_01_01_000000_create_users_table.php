@@ -22,6 +22,7 @@
                 $table->string('password');
                 $table->string('nomor_telepon', 15);
                 $table->rememberToken();
+                $table->string('status');
                 $table->timestamps();
             });
 

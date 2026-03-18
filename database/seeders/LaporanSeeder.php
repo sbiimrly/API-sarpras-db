@@ -5,12 +5,22 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Laporan;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class LaporanSeeder extends Seeder
 {
     public function run(): void
     {
-        Laporan::truncate();
+        // Matikan pengecekan foreign key agar bisa truncate
+        Schema::disableForeignKeyConstraints();
+
+        // Bersihkan tabel yang saling berelasi
+        DB::table('activity_logs')->truncate();
+        DB::table('laporan')->truncate();
+
+        // Hidupkan kembali pengecekan
+        Schema::enableForeignKeyConstraints();
 
         $laporans = [
             // Data dalam 7 hari terakhir (untuk chart)

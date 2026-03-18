@@ -9,3 +9,4 @@ Route::get('/', function () {
 Route::options('/{any}', function () {
     return response()->json([], 200);
 })->where('any', '.*');
+

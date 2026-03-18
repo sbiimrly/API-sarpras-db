@@ -20,7 +20,7 @@ return new class extends Migration
             $table->text('alasan_ditolak')->nullable();
             $table->string('diselesaikan_oleh')->nullable();
             $table->timestamp('diselesaikan_pada')->nullable();
-            $table->string('bukti_penyelesaian')->nullable();
+            $table->string('bukti_penyelesaian')->nullable()->after('foto_selesai');
         });
     }
 

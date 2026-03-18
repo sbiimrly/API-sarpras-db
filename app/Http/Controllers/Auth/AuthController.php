@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Models\Admin;
+use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Routing\Controller;
@@ -28,6 +29,18 @@ class AuthController extends Controller
 
         // Buat token dan simpan role
         $token = $admin->createToken('admin-token')->plainTextToken;
+
+        ActivityLog::create([
+            'admin_id' => $admin->id,
+            'activity' => 'Login ke Sistem',
+            'type'     => 'auth',
+            'details'  => [
+                'ip'         => request()->ip(),
+                'user_agent' => request()->header('User-Agent'),
+                'login_at'   => now()->toDateTimeString()
+            ],
+            'is_read'  => true
+        ]);
 
         return response()->json([
             'success' => true,

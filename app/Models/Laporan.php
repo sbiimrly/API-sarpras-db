@@ -8,11 +8,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Laporan extends Model
 {
-    use HasFactory,SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'laporan';
 
     protected $fillable = [
+        'kode_laporan',
         'nama_pengusul',
         'email',
         'nomor_telepon',
@@ -52,4 +53,30 @@ class Laporan extends Model
     {
         return $query->onlyTrashed();
     }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($laporan) {
+
+            $year = date('Y');
+
+            $last = self::whereNotNull('kode_laporan')
+                ->whereYear('created_at', $year)
+                ->orderBy('id', 'desc')
+                ->first();
+
+            if ($last) {
+                $lastNumber = (int) substr($last->kode_laporan, -4);
+                $number = $lastNumber + 1;
+            } else {
+                $number = 1;
+            }
+
+            $laporan->kode_laporan =
+                'LPR-' . $year . '-' . str_pad($number, 4, '0', STR_PAD_LEFT);
+        });
+    }
+    
 }
