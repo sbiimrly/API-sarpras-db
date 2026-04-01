@@ -16,6 +16,19 @@ class AdminController extends Controller
      */
     public function index(Request $request)
     {
+    
+        $admins = \App\Models\Admin::with(['logs' => function($q) {
+            $q->latest(); // Mengambil log terbaru
+        }])->paginate(10);
+
+        return response()->json([
+            'success' => true,
+            'data' => $admins->items(),
+            'total' => $admins->total(),
+            'current_page' => $admins->currentPage(),
+            'last_page' => $admins->lastPage(),
+        ]);
+
         try {
             $query = Admin::with(['logs' => function($q) {
                 $q->latest()->limit(1);

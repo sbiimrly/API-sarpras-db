@@ -27,11 +27,9 @@ class LaporanController extends Controller
 
         // filter tanggal
         if ($request->tanggal && $request->tanggal !== 'semua') {
-
             $today = Carbon::now();
 
             switch ($request->tanggal) {
-
                 case '7hari':
                     $query->where('created_at', '>=', $today->subDays(7));
                     break;
@@ -62,9 +60,25 @@ class LaporanController extends Controller
 
         $laporan = $query->get();
 
+       $formattedData = $laporan->map(function($item) {
+            return [
+                'id' => $item->id,
+                'kode_laporan' => $item->kode_laporan ?? null,
+                'nama_pengusul' => $item->nama_pengusul,
+                'email' => $item->email,
+                'nomor_telepon' => $item->nomor_telepon,
+                'lokasi_kerusakan' => $item->lokasi_kerusakan,
+                'deskripsi_kerusakan' => $item->deskripsi_kerusakan,
+                'foto_kerusakan' => $item->foto_kerusakan,
+                'status_laporan' => $item->status_laporan,
+                'created_at' => $item->created_at,
+                'updated_at' => $item->updated_at,
+            ];
+        });
+
         return response()->json([
             'success' => true,
-            'data' => $laporan,
+            'data' => $formattedData,
             'total' => $laporan->count()
         ]);
     }
@@ -86,7 +100,28 @@ class LaporanController extends Controller
 
         return response()->json([
             'success' => true,
-            'data' => $laporan
+            'data' => [
+                'id' => $laporan->id,
+                'kode_laporan' => $laporan->kode_laporan ?? null,
+                'nama_pengusul' => $laporan->nama_pengusul,
+                'email' => $laporan->email,
+                'nomor_telepon' => $laporan->nomor_telepon,
+                'lokasi_kerusakan' => $laporan->lokasi_kerusakan,
+                'deskripsi_kerusakan' => $laporan->deskripsi_kerusakan,
+                'foto_kerusakan' => $laporan->foto_kerusakan,
+                'status_laporan' => $laporan->status_laporan,
+                'alasan_ditolak' => $laporan->alasan_ditolak,
+                'ditolak_pada' => $laporan->ditolak_pada,
+                'ditolak_oleh' => $laporan->ditolak_oleh,
+                'disetujui_oleh' => $laporan->disetujui_oleh,
+                'disetujui_pada' => $laporan->disetujui_pada,
+                'diselesaikan_oleh' => $laporan->diselesaikan_oleh,
+                'diselesaikan_pada' => $laporan->diselesaikan_pada,
+                'foto_selesai' => $laporan->foto_selesai,
+                'created_at' => $laporan->created_at,
+                'updated_at' => $laporan->updated_at,
+                'deleted_at' => $laporan->deleted_at,
+            ]
         ]);
     }
 
@@ -235,7 +270,6 @@ class LaporanController extends Controller
      */
     private function resetAdminFields($laporan)
     {
-
         $laporan->disetujui_oleh = null;
         $laporan->disetujui_pada = null;
 

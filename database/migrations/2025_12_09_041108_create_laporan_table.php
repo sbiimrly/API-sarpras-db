@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('laporan', function (Blueprint $table) {
             $table->id();
+            $table->string('kode_laporan')->unique();
             $table->string('nama_pengusul', 100);
             $table->string('email');
             $table->string('nomor_telepon', 15);

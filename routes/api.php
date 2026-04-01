@@ -44,6 +44,7 @@ Route::prefix('admin')->group(function () {
     Route::get('/arsip', [ArsipController::class, 'index']);
     Route::post('/arsip/restore', [ArsipController::class, 'restore']);
     Route::post('/arsip/destroy', [ArsipController::class, 'destroy']);
+    Route::get('/arsip/{id}', [ArsipController::class, 'show']);
 
     // Admin routes
     Route::get('/admins', [AdminController::class, 'index']);

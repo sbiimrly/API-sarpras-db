@@ -14,15 +14,16 @@
             Schema::create('admin', function (Blueprint $table) {
                 $table->id();
                 // KODE = ID UNIK UNTUK SETIAP ADMIN
-                $table->string('kode',5)->unique();
+                $table->string('kode',10)->unique();
                 $table->string('name', 100);
                 $table->string('email');
                 $table->timestamp('email_verified_at')->nullable();
-                $table->enum('role', ['admin', 'viewer'])->nullable()->default('viewer');
+                $table->enum('role', ['super_admin', 'admin', 'viewer'])->nullable()->default('viewer');
                 $table->string('password');
                 $table->string('nomor_telepon', 15);
                 $table->rememberToken();
                 $table->string('status');
+                $table->timestamp('last_active_at')->nullable();
                 $table->timestamps();
             });
 

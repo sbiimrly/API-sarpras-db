@@ -15,7 +15,6 @@ class ArsipController extends Controller
     public function index(Request $request)
     {
         try {
-            // Gunakan onlyTrashed untuk data yang di soft delete
             $query = Laporan::onlyTrashed()->orderBy('deleted_at', 'desc');
 
             // Filter berdasarkan status
@@ -35,7 +34,7 @@ class ArsipController extends Controller
                         break;
                     case 'bulan':
                         $query->whereMonth('deleted_at', $today->month)
-                              ->whereYear('deleted_at', $today->year);
+                            ->whereYear('deleted_at', $today->year);
                         break;
                 }
             }
@@ -45,39 +44,45 @@ class ArsipController extends Controller
                 $search = $request->search;
                 $query->where(function($q) use ($search) {
                     $q->where('nama_pengusul', 'LIKE', "%{$search}%")
-                      ->orWhere('email', 'LIKE', "%{$search}%")
-                      ->orWhere('lokasi_kerusakan', 'LIKE', "%{$search}%");
+                    ->orWhere('email', 'LIKE', "%{$search}%")
+                    ->orWhere('lokasi_kerusakan', 'LIKE', "%{$search}%")
+                    ->orWhere('nomor_telepon', 'LIKE', "%{$search}%");
                 });
             }
 
-                $laporan = $query->get();
-                $total = $laporan->count();
+            // Pagination - TAMBAHKAN INI
+            $perPage = $request->get('per_page', 10);
+            $laporan = $query->paginate($perPage);
+            
+            // Kembalikan dengan pagination data
+            return response()->json([
+                'success' => true,
+                'message' => 'Data arsip berhasil diambil',
+                'data' => $laporan->items(),
+                'pagination' => [
+                    'current_page' => $laporan->currentPage(),
+                    'last_page' => $laporan->lastPage(),
+                    'per_page' => $laporan->perPage(),
+                    'total' => $laporan->total()
+                ],
+                'filters' => [
+                    'status' => $request->status ?? 'all',
+                    'tanggal' => $request->tanggal ?? null,
+                    'search' => $request->search ?? null
+                ]
+            ]);
 
-                // RETURN JSON, bukan view!
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Data arsip berhasil diambil',
-                    'data' => $laporan,
-                    'total' => $total,
-                    'filters' => [
-                        'status' => $request->status ?? 'all',
-                        'tanggal' => $request->tanggal ?? null,
-                        'search' => $request->search ?? null
-                    ]
-                ]);
+        } catch (\Exception $e) {
+            \Log::error('Error in ArsipController@index: ' . $e->getMessage());
 
-            } catch (\Exception $e) {
-                \Log::error('Error in ArsipController@index: ' . $e->getMessage());
-
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Gagal mengambil data arsip',
-                    'error' => $e->getMessage(),
-                    'data' => [],
-                    'total' => 0
-                ], 500);
-            }
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data arsip',
+                'error' => $e->getMessage()
+            ], 500);
         }
+    }
+
     /**
      * Memulihkan data dari arsip (restore soft delete)
      */
@@ -124,42 +129,92 @@ class ArsipController extends Controller
         try {
             $request->validate([
                 'ids' => 'required|array',
-                'ids.*' => 'integer'
+                'ids.*' => 'integer|exists:laporans,id'
             ]);
 
             $ids = $request->ids;
             $deletedCount = 0;
+            $failedIds = [];
 
             foreach ($ids as $id) {
                 $laporan = Laporan::onlyTrashed()->find($id);
+                
                 if ($laporan) {
-                    // Hapus file foto jika ada
-                    if ($laporan->foto_kerusakan && $laporan->foto_kerusakan !== 'default.jpg') {
-                        $path = storage_path('app/public/' . $laporan->foto_kerusakan);
-                        if (file_exists($path)) {
-                            unlink($path);
+                    try {
+                        // Hapus file foto menggunakan Storage Laravel
+                        if ($laporan->foto_kerusakan && $laporan->foto_kerusakan !== 'default.jpg') {
+                            \Storage::disk('public')->delete($laporan->foto_kerusakan);
                         }
-                    }
 
-                    // Hapus permanen dari database
-                    if ($laporan->forceDelete()) {
+                        // Hapus permanen
+                        $laporan->forceDelete();
                         $deletedCount++;
+                        
+                    } catch (\Exception $e) {
+                        $failedIds[] = $id;
+                        \Log::error("Gagal hapus permanen ID {$id}: " . $e->getMessage());
                     }
                 }
             }
 
+            $message = "Berhasil menghapus permanen {$deletedCount} laporan";
+            if (count($failedIds) > 0) {
+                $message .= ", " . count($failedIds) . " laporan gagal dihapus";
+            }
+
             return response()->json([
                 'success' => true,
-                'message' => "Berhasil menghapus permanen {$deletedCount} laporan",
-                'count' => $deletedCount
+                'message' => $message,
+                'count' => $deletedCount,
+                'failed_ids' => $failedIds
             ]);
 
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $e->errors()
+            ], 422);
+            
         } catch (\Exception $e) {
             \Log::error('Error in ArsipController@destroy: ' . $e->getMessage());
 
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal menghapus data. Silakan coba lagi.'
+                'message' => 'Gagal menghapus data. Silakan coba lagi.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Menampilkan detail laporan yang diarsipkan
+     */
+    public function show($id)
+    {
+        try {
+            $laporan = Laporan::onlyTrashed()->find($id);
+
+            if (!$laporan) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data arsip tidak ditemukan'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Detail arsip berhasil diambil',
+                'data' => $laporan
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Error in ArsipController@show: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil detail arsip',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
