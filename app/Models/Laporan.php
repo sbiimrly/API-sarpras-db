@@ -29,7 +29,7 @@ class Laporan extends Model
         'alasan_ditolak',
         'diselesaikan_oleh',
         'diselesaikan_pada',
-        'bukti_penyelesaian'
+        'foto_selesai',
     ];
 
     protected $dates = [
@@ -40,6 +40,12 @@ class Laporan extends Model
         'updated_at',
         'deleted_at'
 
+    ];
+
+    protected $casts = [
+        'ditolak_pada' => 'datetime',
+        'disetujui_pada' => 'datetime',
+        'diselesaikan_pada' => 'datetime',
     ];
 
     // Data aktif (laporan)

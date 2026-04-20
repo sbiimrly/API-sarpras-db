@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Models\Laporan;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use App\Models\Laporan;
 use Carbon\Carbon;
 
 class ArsipController extends Controller
@@ -86,40 +86,77 @@ class ArsipController extends Controller
     /**
      * Memulihkan data dari arsip (restore soft delete)
      */
-    public function restore(Request $request)
+        public function restore(Request $request)
     {
+        // HAPUS dd() - JANGAN PAKAI dd() DI PRODUCTION!
+        
         try {
+            \Log::info('Restore request received', $request->all());
+
+            // Validasi input
             $request->validate([
                 'ids' => 'required|array',
-                'ids.*' => 'integer'
+                'ids.*' => 'integer|exists:laporan,id'
             ]);
 
             $ids = $request->ids;
-            $restoredCount = 0;
 
-            foreach ($ids as $id) {
-                // Restore dari soft delete
-                $laporan = Laporan::onlyTrashed()->find($id);
-                if ($laporan && $laporan->restore()) {
-                    $restoredCount++;
-                }
+            if (empty($ids)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak ada data yang dipilih'
+                ], 400);
+            }
+
+            // HAPUS dd() berikut:
+            // dd(Laporan::onlyTrashed()->whereIn('id', $ids)->get());
+            
+            // Cek apakah data ada di trash
+            $existingReports = Laporan::onlyTrashed()
+                ->whereIn('id', $ids)
+                ->get();
+            
+            if ($existingReports->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Data tidak ditemukan di arsip'
+                ], 404);
+            }
+            
+            // Lakukan restore
+            $restoredCount = Laporan::onlyTrashed()
+                ->whereIn('id', $ids)
+                ->restore();
+
+            if ($restoredCount === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Gagal memulihkan data'
+                ], 500);
             }
 
             return response()->json([
                 'success' => true,
-                'message' => "Berhasil memulihkan {$restoredCount} laporan dari arsip",
-                'count' => $restoredCount
+                'message' => "Berhasil memulihkan {$restoredCount} data"
             ]);
 
-        } catch (\Exception $e) {
-            \Log::error('Error in ArsipController@restore: ' . $e->getMessage());
-
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Gagal memulihkan data. Silakan coba lagi.'
+                'message' => 'Validasi gagal',
+                'errors' => $e->errors()
+            ], 422);
+            
+        } catch (\Exception $e) {
+            \Log::error('Restore error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Error: ' . $e->getMessage()
             ], 500);
         }
     }
+
 
     /**
      * Menghapus permanen data arsip (force delete)
@@ -129,7 +166,7 @@ class ArsipController extends Controller
         try {
             $request->validate([
                 'ids' => 'required|array',
-                'ids.*' => 'integer|exists:laporans,id'
+                'ids.*' => 'integer|exists:laporan,id'
             ]);
 
             $ids = $request->ids;

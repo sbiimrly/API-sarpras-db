@@ -131,84 +131,53 @@ class LaporanController extends Controller
      */
     public function updateStatus(Request $request, $id)
     {
-
-        $laporan = Laporan::findOrFail($id);
-
-        $request->validate([
-            'status' => 'required|in:menunggu,diproses,ditolak,terselesaikan'
-        ]);
-
-        $status = $request->status;
-
-        $this->resetAdminFields($laporan);
-
-        $admin = Auth::user();
-        $adminKode = $admin->kode_admin ?? $admin->name;
-
-        switch ($status) {
-
-            case 'diproses':
-
+        try {
+            $laporan = Laporan::findOrFail($id);
+            
+            // Validasi request
+            $request->validate([
+                'status' => 'required|in:menunggu,diproses,terselesaikan,ditolak',
+                'alasan_ditolak' => 'required_if:status,ditolak|nullable|string'
+            ]);
+            
+            // Update status
+            $laporan->status_laporan = $request->status;
+            $adminName = Auth::user()->name ?? 'Admin';
+            
+            if ($request->status === 'diproses') {
                 $laporan->status_laporan = 'diproses';
-                $laporan->disetujui_oleh = $adminKode;
+                $laporan->disetujui_oleh = Auth::user()->name;
                 $laporan->disetujui_pada = now();
-
-                break;
-
-
-            case 'ditolak':
-
-                $request->validate([
-                    'alasan_ditolak' => 'required|string|min:5'
-                ]);
-
-                $laporan->status_laporan = 'ditolak';
-                $laporan->ditolak_oleh = $adminKode;
-                $laporan->ditolak_pada = now();
+                $laporan->save();
+            } 
+            elseif ($request->status === 'ditolak') {
                 $laporan->alasan_ditolak = $request->alasan_ditolak;
-
-                break;
-
-
-            case 'terselesaikan':
-
-                if ($laporan->status_laporan !== 'diproses') {
-
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Laporan harus diproses dulu'
-                    ], 400);
-                }
-
-                $request->validate([
-                    'foto_selesai' => 'required|image|max:5120'
-                ]);
-
-                $file = $request->file('foto_selesai');
-
-                $path = $file->store('foto_selesai', 'public');
-
-                $laporan->status_laporan = 'terselesaikan';
-                $laporan->diselesaikan_oleh = $adminKode;
-                $laporan->diselesaikan_pada = now();
-                $laporan->foto_selesai = $path;
-
-                break;
-
-            case 'menunggu':
-
-                $laporan->status_laporan = 'menunggu';
-
-                break;
+                $laporan->ditolak_oleh = $adminName;
+                $laporan->ditolak_pada = now();
+            }
+            elseif ($request->status === 'terselesaikan') {
+                if ($request->hasFile('foto_selesai')) {
+                        $path = $request->file('foto_selesai')->store('laporan/selesai', 'public');
+                        $laporan->foto_selesai = $path;
+                    }
+                    $laporan->diselesaikan_oleh = Auth::user()->name ?? 'Admin';
+                    $laporan->diselesaikan_pada = now();
+            }
+            
+            $laporan->save();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Status berhasil diperbarui',
+                'data' => $laporan
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage()
+            ], 500);
         }
-
-        $laporan->save();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Status berhasil diperbarui',
-            'data' => $laporan
-        ]);
     }
 
 
@@ -217,17 +186,40 @@ class LaporanController extends Controller
      */
     public function archive(Request $request)
     {
-        $request->validate([
-            'ids' => 'required|array',
-            'ids.*' => 'integer|exists:laporan,id'
-        ]);
+         try {
+            // Validasi request
+            $request->validate([
+                'ids' => 'required|array',
+                'ids.*' => 'integer|exists:laporan,id'
+            ]);
 
-        $count = Laporan::whereIn('id', $request->ids)->delete();
+            // Soft delete laporan yang dipilih
+            $count = Laporan::whereIn('id', $request->ids)->delete();
 
-        return response()->json([
-            'success' => true,
-            'message' => "Berhasil mengarsipkan $count laporan"
-        ]);
+            if ($count === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tidak ada laporan yang diarsipkan'
+                ], 400);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "Berhasil mengarsipkan $count laporan"
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Data yang dikirim tidak valid',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
 
@@ -264,6 +256,24 @@ class LaporanController extends Controller
         ]);
     }
 
+    /**
+     * Memulihkan laporan dari arsip (restore)
+     */
+    public function restore(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'integer'
+        ]);
+
+        // Menggunakan onlyTrashed() karena data yang mau dipulihkan ada di sampah
+        $count = Laporan::onlyTrashed()->whereIn('id', $request->ids)->restore();
+
+        return response()->json([
+            'success' => true,
+            'message' => "Berhasil memulihkan $count laporan"
+        ]);
+    }
 
     /**
      * Reset field admin

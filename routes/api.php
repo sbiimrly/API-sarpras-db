@@ -43,7 +43,7 @@ Route::prefix('admin')->group(function () {
     // Arsip routes
     Route::get('/arsip', [ArsipController::class, 'index']);
     Route::post('/arsip/restore', [ArsipController::class, 'restore']);
-    Route::post('/arsip/destroy', [ArsipController::class, 'destroy']);
+    Route::delete('/arsip/destroy', [ArsipController::class, 'destroy']);
     Route::get('/arsip/{id}', [ArsipController::class, 'show']);
 
     // Admin routes
@@ -63,6 +63,10 @@ Route::prefix('admin')->group(function () {
 
     // Tambah Admin
     Route::post('admin', [AdminController::class, 'store'])->name('admin.store');
+
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::put('/admin/laporan/{id}/status', [LaporanController::class, 'updateStatus']);
+    });
 });
 
 // Protected routes
